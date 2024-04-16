@@ -178,6 +178,7 @@ public class ParserImpl
         ParseTree.TypeSpec typespec = (ParseTree.TypeSpec)s4;
         Token             semi     = (Token             )s5;
         ParseTree.LocalDecl localdecl = new ParseTree.LocalDecl(id.lexeme, typespec);
+        env.Put(id.lexeme, typespec); // Add to symbol table
         localdecl.reladdr = 1;
         return localdecl;
     }
@@ -240,16 +241,20 @@ public class ParserImpl
         Token          id     = (Token         )s1;
         Token          assign = (Token         )s2;
         ParseTree.Expr expr   = (ParseTree.Expr)s3;
-        Token          semi   = (Token         )s4;
         Object id_type = env.Get(id.lexeme);
         {
             // check if expr.type matches with id_type
-            if(id_type.equals("num") && (expr instanceof ParseTree.ExprNumLit)) {} // ok
-            else if(
-                id_type.equals("num")
-                && (expr instanceof ParseTree.ExprFuncCall)
-                && (env.Get(((ParseTree.ExprFuncCall)expr).ident).equals("num()"))
-            ) {} // ok
+            if(id_type.equals("num")
+                    && (expr instanceof ParseTree.ExprNumLit)
+            )
+            {
+                Debug("ok");
+            } // ok
+            else if(id_type.equals("num")
+                    && (expr instanceof ParseTree.ExprFuncCall)
+                    && (env.Get(((ParseTree.ExprFuncCall)expr).ident).equals("num()"))
+            )
+            {} // ok
             else
             {
                 throw new Exception("semantic error");
@@ -321,7 +326,7 @@ public class ParserImpl
         return new ParseTree.IfStmt(expr, stmtlist1, stmtlist2);
     }
 
-    ParseTree.WhileStmt whilestmt____WHILE_expr_BEGIN_stmtlist_END(Object s1, Object s2, Object s3, Object s4) throws Exception
+    ParseTree.WhileStmt whilestmt____WHILE_expr_BEGIN_stmtlist_END(Object s1, Object s2, Object s3, Object s4, Object s5) throws Exception
     {
         ParseTree.Expr expr = (ParseTree.Expr)s2;
         ArrayList<ParseTree.Stmt> stmtlist = (ArrayList<ParseTree.Stmt>)s4;
@@ -552,7 +557,8 @@ public class ParserImpl
     {
         // 1. create and return node that has int type
         Token token = (Token)s1;
-        double value = Integer.parseInt(token.lexeme);
+        double value = token.lexeme.contains(".") ? Double.parseDouble(token.lexeme) : Integer.parseInt(token.lexeme);
+//        double value = Integer.parseInt(token.lexeme);
         return new ParseTree.ExprNumLit(value);
     }
 

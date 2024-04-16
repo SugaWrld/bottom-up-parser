@@ -95,7 +95,7 @@ return_stmt     : RETURN expr SEMI                              { Debug("return_
 if_stmt         : IF expr THEN stmt_list ELSE stmt_list END     { Debug("if_stmt -> if expr then stmt_list else stmt_list end"); $$ = ifstmt____IF_expr_THEN_stmtlist_ELSE_stmtlist_END($1,$2,$3,$4,$5,$6,$7);}
                 ;
 
-while_stmt      : WHILE expr BEGIN stmt_list END                { Debug("while_stmt -> while expr begin stmt_list end"); $$ = whilestmt____WHILE_expr_BEGIN_stmtlist_END($1,$2,$3,$4); }
+while_stmt      : WHILE expr BEGIN stmt_list END                { Debug("while_stmt -> while expr begin stmt_list end"); $$ = whilestmt____WHILE_expr_BEGIN_stmtlist_END($1,$2,$3,$4,$5); }
                 ;
 
 compound_stmt   : BEGIN local_decls stmt_list END               { Debug("compound_stmt -> begin local_decls stmt_list end"); $$ = compoundstmt____BEGIN_localdecls_stmtlist_END($1,$2,$3,$4);}

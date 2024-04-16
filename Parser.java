@@ -794,7 +794,7 @@ case 31:
 break;
 case 32:
 //#line 98 "Parser.y"
-{ Debug("while_stmt -> while expr begin stmt_list end"); yyval.obj = whilestmt____WHILE_expr_BEGIN_stmtlist_END(val_peek(4).obj,val_peek(3).obj,val_peek(2).obj,val_peek(1).obj); }
+{ Debug("while_stmt -> while expr begin stmt_list end"); yyval.obj = whilestmt____WHILE_expr_BEGIN_stmtlist_END(val_peek(4).obj,val_peek(3).obj,val_peek(2).obj,val_peek(1).obj,val_peek(0).obj); }
 break;
 case 33:
 //#line 101 "Parser.y"

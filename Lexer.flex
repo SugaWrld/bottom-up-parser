@@ -35,7 +35,7 @@ identifier   = [a-zA-Z][a-zA-Z0-9_]*
 newline      = \n
 whitespace   = [ \t\r]+
 linecomment  = "//".*
-blockcomment = "/*"[^]*"*/"
+blockcomment = "{"[^]*"}"
 boolean = "true" | "false"
 
 %%

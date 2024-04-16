@@ -23,8 +23,9 @@ public class Env
     {
         for(Env env = this; env != null; env = env.prev)
         {
-            Object value = env.table.get(name);
-            if(value != null) return value;
+            if (env.table.containsKey(name)) {
+                return env.table.get(name);
+            }
         }
         return null;
     }
