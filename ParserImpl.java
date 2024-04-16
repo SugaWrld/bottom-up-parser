@@ -134,7 +134,7 @@ public class ParserImpl
         ParseTree.TypeSpec primtype = (ParseTree.TypeSpec)s1;
         Token              lbrack   = (Token             )s2;
         Token              rbrack   = (Token             )s3;
-        return new ParseTree.TypeSpec(primtype + lbrack.lexeme + rbrack.lexeme);
+        return new ParseTree.TypeSpec(primtype.typename + lbrack.lexeme + rbrack.lexeme);
     }
 
     ParseTree.TypeSpec primtype____NUM(Object s1) throws Exception
@@ -170,7 +170,7 @@ public class ParserImpl
         ParseTree.TypeSpec typespec = (ParseTree.TypeSpec)s4;
         ParseTree.LocalDecl localdecl = new ParseTree.LocalDecl(id.lexeme, typespec);
         // env.Put(id.lexeme, typespec); // Add to symbol table
-        localdecl.reladdr = 1;
+        // localdecl.reladdr = 1;
         return localdecl;
     }
 
