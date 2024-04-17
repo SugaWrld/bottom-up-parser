@@ -13,20 +13,20 @@
 
 %{
 
-  public Parser parser;
+public Parser parser;
 
-  public Lexer(java.io.Reader r, Parser parser) {
+public Lexer(java.io.Reader r, Parser parser) {
     this(r);
     this.parser = parser;
-  }
+}
 
-  public int getLineNumber() {
+public int getLineNumber() {
     return this.yyline;
-  }
+}
 
-  public int getColumnNumber() {
+public int getColumnNumber() {
     return this.yycolumn;
-  }
+}
 
 %}
 
