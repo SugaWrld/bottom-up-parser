@@ -1,0 +1,4 @@
+func main :: num ()
+begin
+    x := 1;
+end

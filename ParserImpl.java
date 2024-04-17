@@ -14,6 +14,12 @@ public class ParserImpl {
     ParseTree.Program program____decllist(Object s1) throws Exception {
         ArrayList<ParseTree.FuncDecl> decllist = (ArrayList<ParseTree.FuncDecl>) s1;
         parsetree_program = new ParseTree.Program(decllist);
+
+        // check if there is at least one main function with no parameters and returns num
+        boolean hasMain = decllist.stream()
+                .anyMatch(decl -> decl.ident.equals("main") && decl.params.isEmpty() && decl.rettype.typename.equals("num"));
+        if(!hasMain) throw new Exception("semantic error: improper main function");
+
         return parsetree_program;
     }
 
@@ -34,6 +40,7 @@ public class ParserImpl {
     }
 
     ParseTree.FuncDecl fundecl____FUNC_IDENT_TYPEOF_typespec_LPAREN_params_RPAREN_BEGIN_localdecls_10X_stmtlist_END(Object s1, Object s2, Object s3, Object s4, Object s5, Object s6, Object s7, Object s8, Object s9) throws Exception {
+//        env.Put();
         return null;
     }
 
@@ -167,6 +174,17 @@ public class ParserImpl {
         Token id = (Token) s1;
         ParseTree.Expr expr = (ParseTree.Expr) s3;
         ParseTree.AssignStmt stmt = new ParseTree.AssignStmt(id.lexeme, expr);
+
+        // check if id's and expr's types are compatible
+        Object id_type = env.Get(id.lexeme);
+        if(
+                (id_type.equals("num") && (expr instanceof ParseTree.ExprNumLit))
+                || (id_type.equals("num") && (expr instanceof ParseTree.ExprFuncCall) && (env.Get(((ParseTree.ExprFuncCall)expr).ident).equals("num()")))
+                || (id_type.equals("bool") && (expr instanceof ParseTree.ExprBoolLit))
+                || (id_type.equals("bool") && (expr instanceof ParseTree.ExprFuncCall) && (env.Get(((ParseTree.ExprFuncCall)expr).ident).equals("bool()")))
+        ) {} // ok
+        else throw new Exception("semantic error: incompatible types");
+
         return stmt;
     }
 
