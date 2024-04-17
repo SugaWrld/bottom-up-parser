@@ -5,6 +5,6 @@
  */
 
 1. java -jar jflex-1.6.1.jar Lexer.flex
-2. yacc.linux -Jnorun -Jexception="Exception" -Jextends=ParserImpl Parser.y
-3. javac* .java
+2. ./yacc.linux -Jnorun -Jthrows="Exception" -Jextends=ParserImpl Parser.y
+3. javac *.java
 4. java Program <test>.minc
