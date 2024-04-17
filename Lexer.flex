@@ -1,9 +1,3 @@
-/*
- * name: haris ahmad
- * email: hka5236@psu.edu
- * class: cmpsc 470-001
- */
-
 %%
 
 %class Lexer
