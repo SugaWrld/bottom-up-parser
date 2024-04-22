@@ -11,6 +11,15 @@ public class ParserImpl {
     Env env = new Env(null);
     ParseTree.Program parsetree_program = null;
 
+    private void handleEnv() {
+
+    }
+
+    private void nextEnv() {
+        Env tempEnv = new Env(this.env);
+        this.env = tempEnv;
+    }
+
     ParseTree.Program program____decllist(Object s1) throws Exception {
         ArrayList<ParseTree.FuncDecl> decllist = (ArrayList<ParseTree.FuncDecl>) s1;
         parsetree_program = new ParseTree.Program(decllist);
@@ -41,6 +50,7 @@ public class ParserImpl {
 
     ParseTree.FuncDecl fundecl____FUNC_IDENT_TYPEOF_typespec_LPAREN_params_RPAREN_BEGIN_localdecls_10X_stmtlist_END(Object s1, Object s2, Object s3, Object s4, Object s5, Object s6, Object s7, Object s8, Object s9) throws Exception {
 //        env.Put();
+        nextEnv();
         return null;
     }
 
@@ -110,6 +120,10 @@ public class ParserImpl {
         ArrayList<ParseTree.LocalDecl> localdecls = (ArrayList<ParseTree.LocalDecl>) s1;
         ParseTree.LocalDecl localdecl = (ParseTree.LocalDecl) s2;
         localdecls.add(localdecl);
+
+        // put local declarations into the environment
+        localdecls.forEach(decl -> env.Put(decl.ident, decl.typespec.typename));
+
         return localdecls;
     }
 
@@ -121,6 +135,9 @@ public class ParserImpl {
         Token id = (Token) s2;
         ParseTree.TypeSpec typespec = (ParseTree.TypeSpec) s4;
         ParseTree.LocalDecl localdecl = new ParseTree.LocalDecl(id.lexeme, typespec);
+
+        localdecl.reladdr = env.address;
+
         return localdecl;
     }
 
@@ -174,16 +191,39 @@ public class ParserImpl {
         Token id = (Token) s1;
         ParseTree.Expr expr = (ParseTree.Expr) s3;
         ParseTree.AssignStmt stmt = new ParseTree.AssignStmt(id.lexeme, expr);
+        stmt.ident_reladdr = env.address;
 
         // check if id's and expr's types are compatible
         Object id_type = env.Get(id.lexeme);
-        if(
-                (id_type.equals("num") && (expr instanceof ParseTree.ExprNumLit))
-                || (id_type.equals("num") && (expr instanceof ParseTree.ExprFuncCall) && (env.Get(((ParseTree.ExprFuncCall)expr).ident).equals("num()")))
-                || (id_type.equals("bool") && (expr instanceof ParseTree.ExprBoolLit))
-                || (id_type.equals("bool") && (expr instanceof ParseTree.ExprFuncCall) && (env.Get(((ParseTree.ExprFuncCall)expr).ident).equals("bool()")))
-        ) {} // ok
-        else throw new Exception("semantic error: incompatible types");
+
+        // if id's type is a num
+        if(id_type.equals("num")) {
+            if(expr instanceof ParseTree.ExprNumLit
+            || expr instanceof ParseTree.ExprNot) {} // ok
+            else if(expr instanceof ParseTree.ExprFuncCall) {
+                Object expr_type = env.Get(((ParseTree.ExprFuncCall)expr).ident);
+                if(!expr_type.equals("num()")) throw new Exception("semantic error: incompatible types");
+            }
+            else if(expr instanceof ParseTree.ExprIdent) {
+                Object expr_type = env.Get(((ParseTree.ExprIdent)expr).ident);
+                if(!expr_type.equals("num")) throw new Exception("semantic error: incompatible types");
+            }
+            else throw new Exception("semantic error: incompatible types");
+        }
+
+        // if id's type is a bool
+        else if(id_type.equals("bool")) {
+            if(expr instanceof ParseTree.ExprBoolLit) {} // ok
+            else if(expr instanceof ParseTree.ExprFuncCall) {
+                Object expr_type = env.Get(((ParseTree.ExprFuncCall)expr).ident);
+                if(!expr_type.equals("bool()")) throw new Exception("semantic error: incompatible types");
+            }
+            else if(expr instanceof ParseTree.ExprIdent) {
+                Object expr_type = env.Get(((ParseTree.ExprIdent)expr).ident);
+                if(!expr_type.equals("bool")) throw new Exception("semantic error: incompatible types");
+            }
+            else throw new Exception("semantic error: incompatible types");
+        }
 
         return stmt;
     }
@@ -248,81 +288,157 @@ public class ParserImpl {
         return arglist;
     }
 
+    private void exprCheckType(ParseTree.Expr expr1, ParseTree.Expr expr2) throws Exception {
+        List<Class<?>> classesToCheck = Arrays.asList(ParseTree.ExprAdd.class, ParseTree.ExprSub.class, ParseTree.ExprMul.class, ParseTree.ExprDiv.class, ParseTree.ExprMod.class, ParseTree.ExprParen.class);
+        if(expr1 instanceof ParseTree.ExprNumLit && expr2 instanceof ParseTree.ExprNumLit) {}
+        else if(expr1 instanceof ParseTree.ExprBoolLit && expr2 instanceof ParseTree.ExprBoolLit) {}
+
+        else if(expr1 instanceof ParseTree.ExprNumLit) {
+            if(expr2 instanceof ParseTree.ExprIdent) {
+                Object expr2_type = env.Get(((ParseTree.ExprIdent)expr2).ident);
+                if(!expr2_type.equals("num")) throw new Exception("semantic error: incompatible types");
+            }
+        }
+
+        else if(expr2 instanceof ParseTree.ExprNumLit) {
+            if(expr1 instanceof ParseTree.ExprIdent) {
+                Object expr1_type = env.Get(((ParseTree.ExprIdent)expr1).ident);
+                if(!expr1_type.equals("num")) throw new Exception("semantic error: incompatible types");
+            }
+        }
+
+        else if(expr1 instanceof ParseTree.ExprBoolLit) {
+            if(expr2 instanceof ParseTree.ExprIdent) {
+                Object expr2_type = env.Get(((ParseTree.ExprIdent)expr2).ident);
+                if(!expr2_type.equals("bool")) throw new Exception("semantic error: incompatible types");
+            }
+        }
+
+        else if(expr2 instanceof ParseTree.ExprBoolLit) {
+            if(expr1 instanceof ParseTree.ExprIdent) {
+                Object expr1_type = env.Get(((ParseTree.ExprIdent)expr1).ident);
+                if(!expr1_type.equals("bool")) throw new Exception("semantic error: incompatible types");
+            }
+        }
+
+        else if(classesToCheck.stream().anyMatch(clazz -> clazz.isInstance(expr1) || clazz.isInstance(expr2))) {}
+        else throw new Exception("semantic error: incompatible types");
+    }
+
     ParseTree.ExprAdd expr____expr_ADD_expr(Object s1, Object s2, Object s3) throws Exception {
         ParseTree.Expr expr1 = (ParseTree.Expr) s1;
         ParseTree.Expr expr2 = (ParseTree.Expr) s3;
+
+        exprCheckType(expr1, expr2);
+
         return new ParseTree.ExprAdd(expr1, expr2);
     }
 
     ParseTree.ExprSub expr____expr_SUB_expr(Object s1, Object s2, Object s3) throws Exception {
         ParseTree.Expr expr1 = (ParseTree.Expr) s1;
         ParseTree.Expr expr2 = (ParseTree.Expr) s3;
+
+        exprCheckType(expr1, expr2);
+
         return new ParseTree.ExprSub(expr1, expr2);
     }
 
     ParseTree.ExprMul expr____expr_MUL_expr(Object s1, Object s2, Object s3) throws Exception {
         ParseTree.Expr expr1 = (ParseTree.Expr) s1;
         ParseTree.Expr expr2 = (ParseTree.Expr) s3;
+
+        exprCheckType(expr1, expr2);
+
         return new ParseTree.ExprMul(expr1, expr2);
     }
 
     ParseTree.ExprDiv expr____expr_DIV_expr(Object s1, Object s2, Object s3) throws Exception {
         ParseTree.Expr expr1 = (ParseTree.Expr) s1;
         ParseTree.Expr expr2 = (ParseTree.Expr) s3;
+
+        exprCheckType(expr1, expr2);
+
         return new ParseTree.ExprDiv(expr1, expr2);
     }
 
     ParseTree.ExprMod expr____expr_MOD_expr(Object s1, Object s2, Object s3) throws Exception {
         ParseTree.Expr expr1 = (ParseTree.Expr) s1;
         ParseTree.Expr expr2 = (ParseTree.Expr) s3;
+
+        exprCheckType(expr1, expr2);
+
         return new ParseTree.ExprMod(expr1, expr2);
     }
 
     ParseTree.ExprEq expr____expr_EQ_expr(Object s1, Object s2, Object s3) throws Exception {
         ParseTree.Expr expr1 = (ParseTree.Expr) s1;
         ParseTree.Expr expr2 = (ParseTree.Expr) s3;
+
+        exprCheckType(expr1, expr2);
+
         return new ParseTree.ExprEq(expr1, expr2);
     }
 
     ParseTree.ExprNe expr____expr_NE_expr(Object s1, Object s2, Object s3) throws Exception {
         ParseTree.Expr expr1 = (ParseTree.Expr) s1;
         ParseTree.Expr expr2 = (ParseTree.Expr) s3;
+
+        exprCheckType(expr1, expr2);
+
         return new ParseTree.ExprNe(expr1, expr2);
     }
 
     ParseTree.ExprLe expr____expr_LE_expr(Object s1, Object s2, Object s3) throws Exception {
         ParseTree.Expr expr1 = (ParseTree.Expr) s1;
         ParseTree.Expr expr2 = (ParseTree.Expr) s3;
+
+        exprCheckType(expr1, expr2);
+
         return new ParseTree.ExprLe(expr1, expr2);
     }
 
     ParseTree.ExprLt expr____expr_LT_expr(Object s1, Object s2, Object s3) throws Exception {
         ParseTree.Expr expr1 = (ParseTree.Expr) s1;
         ParseTree.Expr expr2 = (ParseTree.Expr) s3;
+
+        exprCheckType(expr1, expr2);
+
         return new ParseTree.ExprLt(expr1, expr2);
     }
 
     ParseTree.ExprGe expr____expr_GE_expr(Object s1, Object s2, Object s3) throws Exception {
         ParseTree.Expr expr1 = (ParseTree.Expr) s1;
         ParseTree.Expr expr2 = (ParseTree.Expr) s3;
+
+        exprCheckType(expr1, expr2);
+
         return new ParseTree.ExprGe(expr1, expr2);
     }
 
     ParseTree.ExprGt expr____expr_GT_expr(Object s1, Object s2, Object s3) throws Exception {
         ParseTree.Expr expr1 = (ParseTree.Expr) s1;
         ParseTree.Expr expr2 = (ParseTree.Expr) s3;
+
+        exprCheckType(expr1, expr2);
+
         return new ParseTree.ExprGt(expr1, expr2);
     }
 
     ParseTree.ExprAnd expr____expr_AND_expr(Object s1, Object s2, Object s3) throws Exception {
         ParseTree.Expr expr1 = (ParseTree.Expr) s1;
         ParseTree.Expr expr2 = (ParseTree.Expr) s3;
+
+        exprCheckType(expr1, expr2);
+
         return new ParseTree.ExprAnd(expr1, expr2);
     }
 
     ParseTree.ExprOr expr____expr_OR_expr(Object s1, Object s2, Object s3) throws Exception {
         ParseTree.Expr expr1 = (ParseTree.Expr) s1;
         ParseTree.Expr expr2 = (ParseTree.Expr) s3;
+
+        exprCheckType(expr1, expr2);
+
         return new ParseTree.ExprOr(expr1, expr2);
     }
 
@@ -339,6 +455,9 @@ public class ParserImpl {
     ParseTree.ExprIdent expr____IDENT(Object s1) throws Exception {
         Token id = (Token) s1;
         ParseTree.ExprIdent expr = new ParseTree.ExprIdent(id.lexeme);
+
+        expr.reladdr = env.address;
+
         return expr;
     }
 

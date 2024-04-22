@@ -4,6 +4,7 @@ public class Env {
 
     HashMap<String, Object> table;
     public Env prev;
+    public int address = 1;
 
     public Env(Env prev) {
         this.table = new HashMap<>();
@@ -12,6 +13,7 @@ public class Env {
 
     public void Put(String name, Object value) {
         this.table.put(name, value);
+        this.address++;
     }
 
     public Object Get(String name) {
