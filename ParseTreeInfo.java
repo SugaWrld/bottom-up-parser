@@ -48,6 +48,8 @@ public class ParseTreeInfo
     }
     public static class LocalDeclInfo
     {
+        public int lineno;
+        public int colno;
     }
     public static class StmtStmtInfo
     {
@@ -57,6 +59,8 @@ public class ParseTreeInfo
     }
     public static class ExprInfo
     {
+        public int colno;
+        public int lineno;
         String type;
     }
 }
