@@ -234,6 +234,10 @@ public class ParserImpl {
         ParseTree.Expr expr2 = (ParseTree.Expr) s6;
         ParseTree.AssignStmtForArray stmt = new ParseTree.AssignStmtForArray(id.lexeme, expr1, expr2);
 
+        // check if its defined
+        if(env.Get(id.lexeme) == null)
+            throw new Exception("[Error at 0:0] Array " + id.lexeme + " is not defined.");
+
         // check if index value is a num or an ident
         if(expr1 instanceof ParseTree.ExprIdent && !env.Get(((ParseTree.ExprIdent)expr1).ident).equals("num"))
             throw new Exception("[Error at 0:0] Array index must be a num valuee.");
@@ -265,12 +269,22 @@ public class ParserImpl {
         ParseTree.Expr expr = (ParseTree.Expr) s2;
         ArrayList<ParseTree.Stmt> stmtlist1 = (ArrayList<ParseTree.Stmt>) s4;
         ArrayList<ParseTree.Stmt> stmtlist2 = (ArrayList<ParseTree.Stmt>) s6;
+
+        // check if expr is a bool
+        if(!isBool(expr))
+            throw new Exception("[Error at 0:0] Condition of if or while statement should be a bool value.");
+
         return new ParseTree.IfStmt(expr, stmtlist1, stmtlist2);
     }
 
     ParseTree.WhileStmt whilestmt____WHILE_expr_BEGIN_stmtlist_END(Object s1, Object s2, Object s3, Object s4, Object s5) throws Exception {
         ParseTree.Expr expr = (ParseTree.Expr) s2;
         ArrayList<ParseTree.Stmt> stmtlist = (ArrayList<ParseTree.Stmt>) s4;
+
+        // check if expr is a bool
+        if(!isBool(expr))
+            throw new Exception("[Error at 0:0] Condition of if or while statement should be a bool value.");
+
         return new ParseTree.WhileStmt(expr, stmtlist);
     }
 
@@ -303,6 +317,7 @@ public class ParserImpl {
         return arglist;
     }
 
+    // TODO: fail_04d
     ParseTree.ExprAdd expr____expr_ADD_expr(Object s1, Object s2, Object s3) throws Exception {
         ParseTree.Expr expr1 = (ParseTree.Expr) s1;
         ParseTree.Expr expr2 = (ParseTree.Expr) s3;
