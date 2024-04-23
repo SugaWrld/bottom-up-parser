@@ -217,7 +217,7 @@ public class ParserImpl {
 
         // check if expr is an identifier and if its defined
         if(expr instanceof ParseTree.ExprIdent && env.Get(((ParseTree.ExprIdent) expr).ident) == null)
-            throw new Exception("[Error at " + expr.info.lineno + ":" + expr.info.colno + "] Identifier " + ((ParseTree.ExprIdent) expr).ident + " is not defined.");
+            throw new Exception("[Error at " + expr.info.lineno + ":" + expr.info.colno + "] Variable " + ((ParseTree.ExprIdent) expr).ident + " is not defined.");
 
         // check if ident's type matches with expr's type
         Object idType = env.Get(id.lexeme);
@@ -242,9 +242,9 @@ public class ParserImpl {
 
         // check if index value is a num or an ident
         if(expr1 instanceof ParseTree.ExprIdent && !env.Get(((ParseTree.ExprIdent)expr1).ident).equals("num"))
-            throw new Exception("[Error at " + expr1.info.lineno + ":" + expr1.info.colno + "] Array index must be a num valuee.");
+            throw new Exception("[Error at " + expr1.info.lineno + ":" + expr1.info.colno + "] Array index must be num valuee.");
         else if(!determineType(expr1).equals("num"))
-            throw new Exception("[Error at " + expr1.info.lineno + ":" + expr1.info.colno + "] Array index must be a num value.");
+            throw new Exception("[Error at " + expr1.info.lineno + ":" + expr1.info.colno + "] Array index must be num value.");
 
         // check if element value is the same type as the array
         String idType = (String) env.Get(id.lexeme);
@@ -326,7 +326,8 @@ public class ParserImpl {
         ParseTree.Expr expr2 = (ParseTree.Expr) s3;
 
         if(!areBothNum(expr1, expr2))
-            throw new Exception("[Error at " + add.lineno + ":" + add.colno + "] Binary operation + cannot be used with num and bool values.");
+            throw new Exception("[Error at " + add.lineno + ":" + add.colno + "] Binary operation + cannot be used with "
+                + determineType(expr1) + " and " +  determineType(expr2) + " values.");
 
         return new ParseTree.ExprAdd(expr1, expr2);
     }
@@ -337,7 +338,8 @@ public class ParserImpl {
         ParseTree.Expr expr2 = (ParseTree.Expr) s3;
 
         if(!areBothNum(expr1, expr2))
-            throw new Exception("[Error at " + sub.lineno + ":" + sub.colno + "] Binary operation - cannot be used with num and bool values.");
+            throw new Exception("[Error at " + sub.lineno + ":" + sub.colno + "] Binary operation - cannot be used "
+                    + determineType(expr1) + " and " +  determineType(expr2) + " values.");
 
         return new ParseTree.ExprSub(expr1, expr2);
     }
@@ -348,7 +350,7 @@ public class ParserImpl {
         ParseTree.Expr expr2 = (ParseTree.Expr) s3;
 
         if(!areBothNum(expr1, expr2))
-            throw new Exception("[Error at " + mul.lineno + ":" + mul.colno + "] Binary operation * cannot be used with num and bool values.");
+            throw new Exception("[Error at " + mul.lineno + ":" + mul.colno + "] Binary operation * cannot be used with " + determineType(expr1) + " and " +  determineType(expr2) + " values.");
 
         return new ParseTree.ExprMul(expr1, expr2);
     }
@@ -359,7 +361,7 @@ public class ParserImpl {
         ParseTree.Expr expr2 = (ParseTree.Expr) s3;
 
         if(!areBothNum(expr1, expr2))
-            throw new Exception("[Error at " + div.lineno + ":" + div.colno + "] Binary operation / cannot be used with num and bool values.");
+            throw new Exception("[Error at " + div.lineno + ":" + div.colno + "] Binary operation / cannot be used " + determineType(expr1) + " and " +  determineType(expr2) + " values.");
 
         return new ParseTree.ExprDiv(expr1, expr2);
     }
@@ -370,7 +372,7 @@ public class ParserImpl {
         ParseTree.Expr expr2 = (ParseTree.Expr) s3;
 
         if(!areBothNum(expr1, expr2))
-            throw new Exception("[Error at " + mod.lineno + ":" + mod.colno + "] Binary operation % cannot be used with num and bool values.");
+            throw new Exception("[Error at " + mod.lineno + ":" + mod.colno + "] Binary operation % cannot be used with " + determineType(expr1) + " and " +  determineType(expr2) + " values.");
 
         return new ParseTree.ExprMod(expr1, expr2);
     }
@@ -381,7 +383,7 @@ public class ParserImpl {
         ParseTree.Expr expr2 = (ParseTree.Expr) s3;
 
         if(!areBothNum(expr1, expr2) && !areBothBool(expr1, expr2))
-            throw new Exception("[Error at " + eq.lineno + ":" + eq.colno + "] Binary operation = cannot be used with bool and num values.");
+            throw new Exception("[Error at " + eq.lineno + ":" + eq.colno + "] Binary operation = cannot be used with " + determineType(expr1) + " and " +  determineType(expr2) + " values.");
 
         return new ParseTree.ExprEq(expr1, expr2);
     }
@@ -392,7 +394,7 @@ public class ParserImpl {
         ParseTree.Expr expr2 = (ParseTree.Expr) s3;
 
         if(!areBothNum(expr1, expr2))
-            throw new Exception("[Error at " + ne.lineno + ":" + ne.colno + "] Binary operation <> cannot be used with bool and num values.");
+            throw new Exception("[Error at " + ne.lineno + ":" + ne.colno + "] Binary operation <> cannot be used with " + determineType(expr1) + " and " +  determineType(expr2) + " values.");
 
         return new ParseTree.ExprNe(expr1, expr2);
     }
@@ -403,7 +405,7 @@ public class ParserImpl {
         ParseTree.Expr expr2 = (ParseTree.Expr) s3;
 
         if(!areBothNum(expr1, expr2))
-            throw new Exception("[Error at " + le.lineno + ":" + le.colno + "] Binary operation <= cannot be used with bool and num values.");
+            throw new Exception("[Error at " + le.lineno + ":" + le.colno + "] Binary operation <= cannot be used with " + determineType(expr1) + " and " +  determineType(expr2) + " values.");
 
         return new ParseTree.ExprLe(expr1, expr2);
     }
@@ -414,7 +416,7 @@ public class ParserImpl {
         ParseTree.Expr expr2 = (ParseTree.Expr) s3;
 
         if(!areBothNum(expr1, expr2))
-            throw new Exception("[Error at " + lt.lineno + ":" + lt.colno + "] Binary operation < cannot be used with bool and num values.");
+            throw new Exception("[Error at " + lt.lineno + ":" + lt.colno + "] Binary operation < cannot be used with " + determineType(expr1) + " and " +  determineType(expr2) + " values.");
 
         return new ParseTree.ExprLt(expr1, expr2);
     }
@@ -425,7 +427,8 @@ public class ParserImpl {
         ParseTree.Expr expr2 = (ParseTree.Expr) s3;
 
         if(!areBothNum(expr1, expr2))
-            throw new Exception("[Error at " + ge.lineno + ":" + ge.colno + "] Binary operation >= cannot be used with bool and num values.");
+            throw new Exception("[Error at " + ge.lineno + ":" + ge.colno + "] Binary operation >= cannot be used with "
+                + determineType(expr1) + " and " +  determineType(expr2) + " values.");
 
         return new ParseTree.ExprGe(expr1, expr2);
     }
@@ -436,7 +439,7 @@ public class ParserImpl {
         ParseTree.Expr expr2 = (ParseTree.Expr) s3;
 
         if(!areBothNum(expr1, expr2))
-            throw new Exception("[Error at " + gt.lineno + ":" + gt.colno + "] Binary operation > cannot be used with bool and num values.");
+            throw new Exception("[Error at " + gt.lineno + ":" + gt.colno + "] Binary operation > cannot be used with " + determineType(expr1) + " and " +  determineType(expr2) + " values.");
 
         return new ParseTree.ExprGt(expr1, expr2);
     }
@@ -447,7 +450,7 @@ public class ParserImpl {
         ParseTree.Expr expr2 = (ParseTree.Expr) s3;
 
         if(!areBothBool(expr1, expr2))
-            throw new Exception("[Error at " + and.lineno + ":" + and.colno + "] Binary operation and cannot be used with bool and num values.");
+            throw new Exception("[Error at " + and.lineno + ":" + and.colno + "] Binary operation and cannot be used with " + determineType(expr1) + " and " +  determineType(expr2) + " values.");
 
         return new ParseTree.ExprAnd(expr1, expr2);
     }
@@ -458,7 +461,7 @@ public class ParserImpl {
         ParseTree.Expr expr2 = (ParseTree.Expr) s3;
 
         if(!areBothBool(expr1, expr2))
-            throw new Exception("[Error at " + or.lineno + ":" + or.colno + "] Binary operation or cannot be used with bool and num values.");
+            throw new Exception("[Error at " + or.lineno + ":" + or.colno + "] Binary operation or cannot be used with " + determineType(expr1) + " and " +  determineType(expr2) + " values.");
 
         return new ParseTree.ExprOr(expr1, expr2);
     }
@@ -533,7 +536,7 @@ public class ParserImpl {
         ParseTree.Expr expr = (ParseTree.Expr) s3;
 
         if(!(expr instanceof ParseTree.ExprNumLit))
-            throw new Exception("[Error at " + expr.info.lineno + ":" + expr.info.colno + "] Array index must be a num value.");
+            throw new Exception("[Error at " + expr.info.lineno + ":" + expr.info.colno + "] Array index must be num value.");
 
         return new ParseTree.ExprArrayElem(id.lexeme, expr);
     }
