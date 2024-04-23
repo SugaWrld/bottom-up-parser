@@ -226,7 +226,6 @@ public class ParserImpl {
         return stmt;
     }
 
-    // TODO: test case fail_4a.minc, fix the errors after the first error
     ParseTree.AssignStmtForArray assignstmt____IDENT_LBRACKET_expr_RBRACKET_ASSIGN_expr_SEMI(
             Object s1, Object s2, Object s3, Object s4, Object s5, Object s6, Object s7
     ) throws Exception {
@@ -235,9 +234,19 @@ public class ParserImpl {
         ParseTree.Expr expr2 = (ParseTree.Expr) s6;
         ParseTree.AssignStmtForArray stmt = new ParseTree.AssignStmtForArray(id.lexeme, expr1, expr2);
 
-        // check if index value is a num
-        if(!determineType(expr1).equals("num"))
+        // check if index value is a num or an ident
+        if(expr1 instanceof ParseTree.ExprIdent && !env.Get(((ParseTree.ExprIdent)expr1).ident).equals("num"))
+            throw new Exception("[Error at 0:0] Array index must be a num valuee.");
+        else if(!(expr1 instanceof ParseTree.ExprIdent) && !determineType(expr1).equals("num"))
             throw new Exception("[Error at 0:0] Array index must be a num value.");
+
+        // check if element value is the same type as the array
+        String idType = (String) env.Get(id.lexeme);
+        String exprType = determineType(expr2);
+        if(!idType.contains(exprType))
+            throw new Exception("Element of array " + id.lexeme + " should have "
+                    + idType.substring(0, idType.length() - 2) + " value, instead of "
+                    + exprType + " value.");
 
         return stmt;
     }
