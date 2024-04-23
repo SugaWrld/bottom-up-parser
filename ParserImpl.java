@@ -1,4 +1,3 @@
-import java.lang.reflect.Array;
 import java.util.*;
 
 @SuppressWarnings({"unchecked", "UnnecessaryLocalVariable"})
@@ -242,8 +241,8 @@ public class ParserImpl {
 
         // check if index value is a num or an ident
         if(expr1 instanceof ParseTree.ExprIdent && !env.Get(((ParseTree.ExprIdent)expr1).ident).equals("num"))
-            throw new Exception("[Error at " + expr1.info.lineno + ":" + expr1.info.colno + "] Array index must be num valuee.");
-        else if(!determineType(expr1).equals("num"))
+            throw new Exception("[Error at " + expr1.info.lineno + ":" + expr1.info.colno + "] Array index must be num value.");
+        else if(!(expr1 instanceof ParseTree.ExprIdent) && !determineType(expr1).equals("num"))
             throw new Exception("[Error at " + expr1.info.lineno + ":" + expr1.info.colno + "] Array index must be num value.");
 
         // check if element value is the same type as the array
