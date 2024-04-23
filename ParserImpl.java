@@ -1,8 +1,5 @@
 import java.util.*;
 
-// TODO: handle not type check properly
-// TODO: fix relative address
-
 @SuppressWarnings({"unchecked", "UnnecessaryLocalVariable"})
 public class ParserImpl {
     public static Boolean _debug = true;
@@ -51,13 +48,29 @@ public class ParserImpl {
         return funcdecl;
     }
 
-    ParseTree.FuncDecl fundecl____FUNC_IDENT_TYPEOF_typespec_LPAREN_params_RPAREN_BEGIN_localdecls_10X_stmtlist_END(Object s1, Object s2, Object s3, Object s4, Object s5, Object s6, Object s7, Object s8, Object s9) throws Exception {
-//        env.Put();
+    ParseTree.FuncDecl fundecl____FUNC_IDENT_TYPEOF_typespec_LPAREN_params_RPAREN_BEGIN_localdecls_10X_stmtlist_END(
+            Object s1, Object s2, Object s3, Object s4, Object s5, Object s6, Object s7, Object s8, Object s9
+    ) throws Exception {
+        Token functionName = (Token) s2;
+        ParseTree.TypeSpec returnType = (ParseTree.TypeSpec) s4;
+        ArrayList<ParseTree.Param> params = (ArrayList<ParseTree.Param>) s6;
+
+        ParseTree.FuncDecl funcdecl = new ParseTree.FuncDecl(functionName.lexeme, returnType, params, null, null);
+        funcdecl.info.functionName = functionName;
+        funcdecl.info.returnType = returnType;
+        funcdecl.info.params = params;
+
+        env.Put(functionName.lexeme, funcdecl.info);
         nextEnv();
+        params.forEach(param -> env.Put(param.ident, param.typespec.typename));
+
         return null;
     }
 
-    ParseTree.FuncDecl fundecl____FUNC_IDENT_TYPEOF_typespec_LPAREN_params_RPAREN_BEGIN_localdecls_X10_stmtlist_END(Object s1, Object s2, Object s3, Object s4, Object s5, Object s6, Object s7, Object s8, Object s9, Object s10, Object s11, Object s12) throws Exception {
+    ParseTree.FuncDecl fundecl____FUNC_IDENT_TYPEOF_typespec_LPAREN_params_RPAREN_BEGIN_localdecls_X10_stmtlist_END(
+            Object s1, Object s2, Object s3, Object s4, Object s5, Object s6,
+            Object s7, Object s8, Object s9, Object s10, Object s11, Object s12
+    ) throws Exception {
         Token id = (Token) s2;
         ParseTree.TypeSpec rettype = (ParseTree.TypeSpec) s4;
         ArrayList<ParseTree.Param> params = (ArrayList<ParseTree.Param>) s6;
@@ -119,13 +132,15 @@ public class ParserImpl {
         return typespec;
     }
 
-    List<ParseTree.LocalDecl> localdecls____localdecls_localdecl(Object s1, Object s2) {
+    List<ParseTree.LocalDecl> localdecls____localdecls_localdecl(Object s1, Object s2) throws Exception {
         ArrayList<ParseTree.LocalDecl> localdecls = (ArrayList<ParseTree.LocalDecl>) s1;
         ParseTree.LocalDecl localdecl = (ParseTree.LocalDecl) s2;
         localdecls.add(localdecl);
 
         // put local declarations into the environment
-        localdecls.forEach(decl -> env.Put(decl.ident, decl.typespec.typename));
+        if(env.Get(localdecl.ident) != null)
+            throw new Exception("[Error at 0:0] Identifier " + localdecl.ident + " is already defined.");
+        env.Put(localdecl.ident, localdecl.typespec.typename);
 
         return localdecls;
     }
@@ -196,9 +211,12 @@ public class ParserImpl {
         ParseTree.AssignStmt stmt = new ParseTree.AssignStmt(id.lexeme, expr);
         stmt.ident_reladdr = env.address;
 
-        // check if id's and expr's types are compatible
+        // check if expr is an identifier and if its defined
+        if(expr instanceof ParseTree.ExprIdent && env.Get(((ParseTree.ExprIdent) expr).ident) == null)
+            throw new Exception("[Error at 0:0] Identifier " + ((ParseTree.ExprIdent) expr).ident + " is not defined.");
+
+        // TODO: check if id's and expr's types are compatible
         Object id_type = env.Get(id.lexeme);
-        exprCheckType(expr, (ParseTree.Expr) id_type);
 
         return stmt;
     }
@@ -266,96 +284,139 @@ public class ParserImpl {
     ParseTree.ExprAdd expr____expr_ADD_expr(Object s1, Object s2, Object s3) throws Exception {
         ParseTree.Expr expr1 = (ParseTree.Expr) s1;
         ParseTree.Expr expr2 = (ParseTree.Expr) s3;
-        exprCheckType(expr1, expr2);
+
+        if(!areBothNum(expr1, expr2) && !areBothBool(expr1, expr2))
+            throw new Exception("[Error at 0:0] Binary operation + cannot be used with num and bool values.");
+
         return new ParseTree.ExprAdd(expr1, expr2);
     }
 
     ParseTree.ExprSub expr____expr_SUB_expr(Object s1, Object s2, Object s3) throws Exception {
         ParseTree.Expr expr1 = (ParseTree.Expr) s1;
         ParseTree.Expr expr2 = (ParseTree.Expr) s3;
-        exprCheckType(expr1, expr2);
+
+        if(!areBothNum(expr1, expr2) && !areBothBool(expr1, expr2))
+            throw new Exception("[Error at 0:0] Binary operation - cannot be used with num and bool values.");
+
         return new ParseTree.ExprSub(expr1, expr2);
     }
 
     ParseTree.ExprMul expr____expr_MUL_expr(Object s1, Object s2, Object s3) throws Exception {
         ParseTree.Expr expr1 = (ParseTree.Expr) s1;
         ParseTree.Expr expr2 = (ParseTree.Expr) s3;
-        exprCheckType(expr1, expr2);
+
+        if(!areBothNum(expr1, expr2) && !areBothBool(expr1, expr2))
+            throw new Exception("[Error at 0:0] Binary operation * cannot be used with num and bool values.");
+
         return new ParseTree.ExprMul(expr1, expr2);
     }
 
     ParseTree.ExprDiv expr____expr_DIV_expr(Object s1, Object s2, Object s3) throws Exception {
         ParseTree.Expr expr1 = (ParseTree.Expr) s1;
         ParseTree.Expr expr2 = (ParseTree.Expr) s3;
-        exprCheckType(expr1, expr2);
+
+        if(!areBothNum(expr1, expr2) && !areBothBool(expr1, expr2))
+            throw new Exception("[Error at 0:0] Binary operation / cannot be used with num and bool values.");
+
         return new ParseTree.ExprDiv(expr1, expr2);
     }
 
     ParseTree.ExprMod expr____expr_MOD_expr(Object s1, Object s2, Object s3) throws Exception {
         ParseTree.Expr expr1 = (ParseTree.Expr) s1;
         ParseTree.Expr expr2 = (ParseTree.Expr) s3;
-        exprCheckType(expr1, expr2);
+
+        if(!areBothNum(expr1, expr2) && !areBothBool(expr1, expr2))
+            throw new Exception("[Error at 0:0] Binary operation % cannot be used with num and bool values.");
+
         return new ParseTree.ExprMod(expr1, expr2);
     }
 
     ParseTree.ExprEq expr____expr_EQ_expr(Object s1, Object s2, Object s3) throws Exception {
         ParseTree.Expr expr1 = (ParseTree.Expr) s1;
         ParseTree.Expr expr2 = (ParseTree.Expr) s3;
-        exprCheckType(expr1, expr2);
+
+        if(!areBothNum(expr1, expr2) && !areBothBool(expr1, expr2))
+            throw new Exception("[Error at 0:0] Binary operation == cannot be used with bool and num values.");
+
         return new ParseTree.ExprEq(expr1, expr2);
     }
 
     ParseTree.ExprNe expr____expr_NE_expr(Object s1, Object s2, Object s3) throws Exception {
         ParseTree.Expr expr1 = (ParseTree.Expr) s1;
         ParseTree.Expr expr2 = (ParseTree.Expr) s3;
-        exprCheckType(expr1, expr2);
+
+        if(!areBothNum(expr1, expr2))
+            throw new Exception("[Error at 0:0] Binary operation != cannot be used with bool and num values.");
+
         return new ParseTree.ExprNe(expr1, expr2);
     }
 
     ParseTree.ExprLe expr____expr_LE_expr(Object s1, Object s2, Object s3) throws Exception {
         ParseTree.Expr expr1 = (ParseTree.Expr) s1;
         ParseTree.Expr expr2 = (ParseTree.Expr) s3;
-        exprCheckType(expr1, expr2);
+
+        if(!areBothNum(expr1, expr2))
+            throw new Exception("[Error at 0:0] Binary operation <= cannot be used with bool and num values.");
+
         return new ParseTree.ExprLe(expr1, expr2);
     }
 
     ParseTree.ExprLt expr____expr_LT_expr(Object s1, Object s2, Object s3) throws Exception {
         ParseTree.Expr expr1 = (ParseTree.Expr) s1;
         ParseTree.Expr expr2 = (ParseTree.Expr) s3;
-        exprCheckType(expr1, expr2);
+
+        if(!areBothNum(expr1, expr2))
+            throw new Exception("[Error at 0:0] Binary operation < cannot be used with bool and num values.");
+
         return new ParseTree.ExprLt(expr1, expr2);
     }
 
     ParseTree.ExprGe expr____expr_GE_expr(Object s1, Object s2, Object s3) throws Exception {
         ParseTree.Expr expr1 = (ParseTree.Expr) s1;
         ParseTree.Expr expr2 = (ParseTree.Expr) s3;
-        exprCheckType(expr1, expr2);
+
+        if(!areBothNum(expr1, expr2))
+            throw new Exception("[Error at 0:0] Binary operation >= cannot be used with bool and num values.");
+
         return new ParseTree.ExprGe(expr1, expr2);
     }
 
     ParseTree.ExprGt expr____expr_GT_expr(Object s1, Object s2, Object s3) throws Exception {
         ParseTree.Expr expr1 = (ParseTree.Expr) s1;
         ParseTree.Expr expr2 = (ParseTree.Expr) s3;
-        exprCheckType(expr1, expr2);
+
+        if(!areBothNum(expr1, expr2))
+            throw new Exception("[Error at 0:0] Binary operation > cannot be used with bool and num values.");
+
         return new ParseTree.ExprGt(expr1, expr2);
     }
 
     ParseTree.ExprAnd expr____expr_AND_expr(Object s1, Object s2, Object s3) throws Exception {
         ParseTree.Expr expr1 = (ParseTree.Expr) s1;
         ParseTree.Expr expr2 = (ParseTree.Expr) s3;
-        exprCheckType(expr1, expr2);
+
+        if(!areBothBool(expr1, expr2))
+            throw new Exception("[Error at 0:0] Binary operation and cannot be used with bool and num values.");
+
         return new ParseTree.ExprAnd(expr1, expr2);
     }
 
     ParseTree.ExprOr expr____expr_OR_expr(Object s1, Object s2, Object s3) throws Exception {
         ParseTree.Expr expr1 = (ParseTree.Expr) s1;
         ParseTree.Expr expr2 = (ParseTree.Expr) s3;
-        exprCheckType(expr1, expr2);
+
+        if(!areBothBool(expr1, expr2))
+            throw new Exception("[Error at 0:0] Binary operation or cannot be used with bool and num values.");
+
         return new ParseTree.ExprOr(expr1, expr2);
     }
 
     ParseTree.ExprNot expr____NOT_expr(Object s1, Object s2) throws Exception {
         ParseTree.Expr expr = (ParseTree.Expr) s2;
+
+        if(!isBool(expr))
+            throw new Exception("[Error at 0:0] Unary operation not cannot be used with num value.");
+
         return new ParseTree.ExprNot(expr);
     }
 
@@ -406,6 +467,59 @@ public class ParserImpl {
         return new ParseTree.ExprArraySize(id.lexeme);
     }
 
+    private boolean isBool(ParseTree.Expr expr) {
+        return expr instanceof ParseTree.ExprBoolLit
+                || (expr instanceof ParseTree.ExprIdent && env.Get(((ParseTree.ExprIdent) expr).ident).equals("bool"));
+    }
+
+    private boolean areBothNum(ParseTree.Expr expr1, ParseTree.Expr expr2) {
+
+        // expr1 = num, expr2 = num
+        if(expr1 instanceof ParseTree.ExprNumLit && expr2 instanceof ParseTree.ExprNumLit)
+            return true;
+
+        // expr1 = num, expr2 = ident
+        else if(expr1 instanceof ParseTree.ExprNumLit
+            && (expr2 instanceof ParseTree.ExprIdent && env.Get(((ParseTree.ExprIdent) expr2).ident).equals("num"))
+        ) return true;
+
+        // expr1 = ident, expr2 = num
+        else if(expr2 instanceof ParseTree.ExprNumLit
+            && (expr1 instanceof ParseTree.ExprIdent && env.Get(((ParseTree.ExprIdent) expr1).ident).equals("num"))
+        ) return true;
+
+        // expr1 = ident, expr2 = ident
+        else if(expr1 instanceof ParseTree.ExprIdent && expr2 instanceof ParseTree.ExprIdent)
+            return env.Get(((ParseTree.ExprIdent)expr1).ident).equals(env.Get(((ParseTree.ExprIdent)expr2).ident));
+
+        // throw error
+        else return false;
+    }
+
+    private boolean areBothBool(ParseTree.Expr expr1, ParseTree.Expr expr2) {
+
+        // expr1 = bool, expr2 = bool
+        if(expr1 instanceof ParseTree.ExprBoolLit && expr2 instanceof ParseTree.ExprBoolLit)
+            return true;
+
+        // expr1 = bool, expr2 = ident
+        else if(expr1 instanceof ParseTree.ExprBoolLit
+            && (expr2 instanceof ParseTree.ExprIdent && env.Get(((ParseTree.ExprIdent) expr2).ident).equals("bool"))
+        ) return true;
+
+        // expr1 = ident, expr2 = bool
+        else if(expr2 instanceof ParseTree.ExprBoolLit
+            && (expr1 instanceof ParseTree.ExprIdent && env.Get(((ParseTree.ExprIdent) expr1).ident).equals("bool"))
+        ) return true;
+
+        // expr1 = ident, expr2 = ident
+        else if(expr1 instanceof ParseTree.ExprIdent && expr2 instanceof ParseTree.ExprIdent)
+            return env.Get(((ParseTree.ExprIdent)expr1).ident).equals(env.Get(((ParseTree.ExprIdent)expr2).ident));
+
+        // throw error
+        else return false;
+    }
+
     private void exprCheckType(ParseTree.Expr expr1, ParseTree.Expr expr2) throws Exception {
         List<Class<?>> classesToCheck = Arrays.asList(
                 ParseTree.ExprAdd.class, ParseTree.ExprSub.class, ParseTree.ExprMul.class,
@@ -447,7 +561,7 @@ public class ParserImpl {
         else if(classesToCheck.stream().anyMatch(clazz -> clazz.isInstance(expr1) || clazz.isInstance(expr2))) {}
 
         // throw error
-        else throw new Exception("semantic error: incompatible types");
+        else throw new Exception("type error: incompatible types");
     }
 
 }
