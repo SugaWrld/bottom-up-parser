@@ -57,5 +57,6 @@ public class ParseTreeInfo
     }
     public static class ExprInfo
     {
+        String type;
     }
 }
