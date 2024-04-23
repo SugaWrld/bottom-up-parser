@@ -249,7 +249,8 @@ public class ParserImpl {
         String idType = (String) env.Get(id.lexeme);
         String exprType = determineType(expr2);
         if(!idType.contains(exprType))
-            throw new Exception("Element of array " + id.lexeme + " should have "
+            throw new Exception(
+                    "[Error at " + id.lineno + ":" + id.colno + "] Element of array " + id.lexeme + " should have "
                     + idType.substring(0, idType.length() - 2) + " value, instead of "
                     + exprType + " value.");
 
@@ -273,7 +274,7 @@ public class ParserImpl {
 
         // check if expr is a bool
         if(!isBool(expr))
-            throw new Exception("[Error at 0:0] Condition of if or while statement should be a bool value.");
+            throw new Exception("[Error at " + expr.info.lineno + ":" + expr.info.colno + "] Condition of if or while statement should be bool value.");
 
         return new ParseTree.IfStmt(expr, stmtlist1, stmtlist2);
     }
@@ -284,7 +285,7 @@ public class ParserImpl {
 
         // check if expr is a bool
         if(!isBool(expr))
-            throw new Exception("[Error at 0:0] Condition of if or while statement should be a bool value.");
+            throw new Exception("[Error at " + expr.info.lineno + ":" + expr.info.colno + "] Condition of if or while statement should be bool value.");
 
         return new ParseTree.WhileStmt(expr, stmtlist);
     }
