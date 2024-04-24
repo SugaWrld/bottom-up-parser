@@ -98,7 +98,7 @@ if_stmt         : IF expr THEN stmt_list ELSE stmt_list END     { Debug("if_stmt
 while_stmt      : WHILE expr BEGIN stmt_list END                { Debug("while_stmt -> while expr begin stmt_list end"); $$ = whilestmt____WHILE_expr_BEGIN_stmtlist_END($1,$2,$3,$4,$5); }
                 ;
 
-compound_stmt   : BEGIN local_decls stmt_list END               { Debug("compound_stmt -> begin local_decls stmt_list end"); $$ = compoundstmt____BEGIN_localdecls_stmtlist_END($1,$2,$3,$4);}
+compound_stmt   : BEGIN local_decls { Debug("compount_stmt -> local_decls"); $<obj>$ = compundstmt____BEGIN_localdecls_10X($1,$2); } stmt_list END { Debug("compound_stmt -> begin local_decls stmt_list end"); $$ = compoundstmt____BEGIN_localdecls_stmtlist_END($1,$2,$3,$4,$5);}
                 ;
 
 args            : arg_list                                      { Debug("args -> arg_list"); $$ = args____arglist($1); }

@@ -16,6 +16,10 @@ public class ParserImpl {
         this.env = tempEnv;
     }
 
+    private void popEnv() {
+        this.env = this.env.prev;
+    }
+
     ParseTree.Program program____decllist(Object s1) throws Exception {
         ArrayList<ParseTree.FuncDecl> decllist = (ArrayList<ParseTree.FuncDecl>) s1;
         parsetree_program = new ParseTree.Program(decllist);
@@ -55,6 +59,7 @@ public class ParserImpl {
         Token functionName = (Token) s2;
         ParseTree.TypeSpec returnType = (ParseTree.TypeSpec) s4;
         ArrayList<ParseTree.Param> params = (ArrayList<ParseTree.Param>) s6;
+        ArrayList<ParseTree.LocalDecl> localdecls = (ArrayList<ParseTree.LocalDecl>) s9;
 
         ParseTree.FuncDecl funcdecl = new ParseTree.FuncDecl(functionName.lexeme, returnType, params, null, null);
         funcdecl.info.functionName = functionName;
@@ -78,6 +83,9 @@ public class ParserImpl {
         ArrayList<ParseTree.LocalDecl> localdecls = (ArrayList<ParseTree.LocalDecl>) s9;
         ArrayList<ParseTree.Stmt> stmtlist = (ArrayList<ParseTree.Stmt>) s11;
         ParseTree.FuncDecl funcdecl = new ParseTree.FuncDecl(id.lexeme, rettype, params, localdecls, stmtlist);
+
+        popEnv();
+
         return funcdecl;
     }
 
@@ -139,9 +147,9 @@ public class ParserImpl {
         localdecls.add(localdecl);
 
         // put local declarations into the environment
-        if(env.Get(localdecl.ident) != null)
+        if(env.table.get(localdecl.ident) != null)
             throw new Exception("[Error at " + localdecl.info.lineno + ":" + localdecl.info.colno + "] Identifier " + localdecl.ident + " is already defined.");
-        env.Put(localdecl.ident, localdecl.typespec.typename);
+        env.table.put(localdecl.ident, localdecl.typespec.typename);
 
         return localdecls;
     }
@@ -267,13 +275,15 @@ public class ParserImpl {
         return new ParseTree.ReturnStmt(expr);
     }
 
-    ParseTree.IfStmt ifstmt____IF_expr_THEN_stmtlist_ELSE_stmtlist_END(Object s1, Object s2, Object s3, Object s4, Object s5, Object s6, Object s7) throws Exception {
+    ParseTree.IfStmt ifstmt____IF_expr_THEN_stmtlist_ELSE_stmtlist_END(
+        Object s1, Object s2, Object s3, Object s4, Object s5, Object s6, Object s7)
+    throws Exception {
         ParseTree.Expr expr = (ParseTree.Expr) s2;
         ArrayList<ParseTree.Stmt> stmtlist1 = (ArrayList<ParseTree.Stmt>) s4;
         ArrayList<ParseTree.Stmt> stmtlist2 = (ArrayList<ParseTree.Stmt>) s6;
 
         // check if expr is a bool
-        if(!isBool(expr))
+        if(!determineType(expr).equals("bool"))
             throw new Exception("[Error at " + expr.info.lineno + ":" + expr.info.colno + "] Condition of if or while statement should be bool value.");
 
         return new ParseTree.IfStmt(expr, stmtlist1, stmtlist2);
@@ -284,15 +294,27 @@ public class ParserImpl {
         ArrayList<ParseTree.Stmt> stmtlist = (ArrayList<ParseTree.Stmt>) s4;
 
         // check if expr is a bool
-        if(!isBool(expr))
+        if(!determineType(expr).equals("bool"))
             throw new Exception("[Error at " + expr.info.lineno + ":" + expr.info.colno + "] Condition of if or while statement should be bool value.");
 
         return new ParseTree.WhileStmt(expr, stmtlist);
     }
 
-    ParseTree.CompoundStmt compoundstmt____BEGIN_localdecls_stmtlist_END(Object s1, Object s2, Object s3, Object s4) throws Exception {
+    ParseTree.CompoundStmt compundstmt____BEGIN_localdecls_10X(Object s1, Object s2) {
         ArrayList<ParseTree.LocalDecl> localdecls = (ArrayList<ParseTree.LocalDecl>) s2;
-        ArrayList<ParseTree.Stmt> stmtlist = (ArrayList<ParseTree.Stmt>) s3;
+
+        nextEnv();
+
+        return new ParseTree.CompoundStmt(localdecls, null);
+    }
+
+    ParseTree.CompoundStmt compoundstmt____BEGIN_localdecls_stmtlist_END(Object s1, Object s2, Object s3, Object s4, Object s5) throws Exception {
+        ArrayList<ParseTree.LocalDecl> localdecls = (ArrayList<ParseTree.LocalDecl>) s2;
+        ArrayList<ParseTree.Stmt> stmtlist = (ArrayList<ParseTree.Stmt>) s4;
+
+        popEnv();
+        popEnv();
+
         return new ParseTree.CompoundStmt(localdecls, stmtlist);
     }
 
@@ -535,7 +557,7 @@ public class ParserImpl {
         Token id = (Token) s1;
         ParseTree.Expr expr = (ParseTree.Expr) s3;
 
-        if(!(expr instanceof ParseTree.ExprNumLit))
+        if(!(determineType(expr).equals("num")))
             throw new Exception("[Error at " + expr.info.lineno + ":" + expr.info.colno + "] Array index must be num value.");
 
         return new ParseTree.ExprArrayElem(id.lexeme, expr);
@@ -758,6 +780,12 @@ public class ParserImpl {
             String id = ((ParseTree.ExprArrayElem) expr).ident;
             String type = (String) env.Get(id);
             return type.substring(0, type.length() - 2);
+        }
+
+        // expr = ident
+        if(expr instanceof ParseTree.ExprIdent) {
+            String id = ((ParseTree.ExprIdent) expr).ident;
+            return (String) env.Get(id);
         }
 
         return "null";
