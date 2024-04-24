@@ -53,6 +53,9 @@ public class ParseTreeInfo
     }
     public static class StmtStmtInfo
     {
+        public int colno;
+        public int lineno;
+        String retType;
     }
     public static class ArgInfo
     {

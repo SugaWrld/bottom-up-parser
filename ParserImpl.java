@@ -16,6 +16,17 @@ public class ParserImpl {
         this.env = tempEnv;
     }
 
+    private void putGlobal(String functionName, ParseTreeInfo.FuncDeclInfo funcDeclInfo) {
+        Env tempEnv = this.env;
+        while(tempEnv.prev != null)
+            tempEnv = tempEnv.prev;
+
+        Env tempEnv2 = new Env(tempEnv);
+        tempEnv2.prev = null;
+        tempEnv.prev = tempEnv2;
+        tempEnv2.Put(functionName, funcDeclInfo);
+    }
+
     private void popEnv() {
         this.env = this.env.prev;
     }
@@ -66,7 +77,7 @@ public class ParserImpl {
         funcdecl.info.returnType = returnType;
         funcdecl.info.params = params;
 
-        env.Put(functionName.lexeme, funcdecl.info);
+        putGlobal(functionName.lexeme, funcdecl.info);
         nextEnv();
         params.forEach(param -> env.Put(param.ident, param.typespec.typename));
 
@@ -85,6 +96,20 @@ public class ParserImpl {
         ParseTree.FuncDecl funcdecl = new ParseTree.FuncDecl(id.lexeme, rettype, params, localdecls, stmtlist);
 
         popEnv();
+
+        // check if the return statements are compatible
+        ParseTreeInfo.StmtStmtInfo retType = new ParseTreeInfo.StmtStmtInfo();
+        for(ParseTree.Stmt stmt: stmtlist) {
+            if(stmt.info.retType != null) {
+                retType = stmt.info;
+                break;
+            }
+        }
+        if(!rettype.typename.equals(retType.retType)) {
+            throw new Exception(
+                "[Error at " + retType.lineno + ":" + retType.colno + "] Function " + id.lexeme + "() should return " + rettype.typename + " value, instead of " + retType.retType + " value."
+            );
+        }
 
         return funcdecl;
     }
@@ -272,7 +297,13 @@ public class ParserImpl {
 
     ParseTree.ReturnStmt returnstmt____RETURN_expr_SEMI(Object s1, Object s2, Object s3) throws Exception {
         ParseTree.Expr expr = (ParseTree.Expr) s2;
-        return new ParseTree.ReturnStmt(expr);
+        ParseTree.ReturnStmt returnStmt = new ParseTree.ReturnStmt(expr);
+
+        returnStmt.info.retType = determineType(expr);
+        returnStmt.info.lineno = expr.info.lineno;
+        returnStmt.info.colno = expr.info.colno;
+
+        return returnStmt;
     }
 
     ParseTree.IfStmt ifstmt____IF_expr_THEN_stmtlist_ELSE_stmtlist_END(
