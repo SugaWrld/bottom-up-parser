@@ -910,6 +910,11 @@ public class ParserImpl {
         // checking 8 c-e , g
         if (expr instanceof ParseTree.ExprFuncCall) {
             String name = ((ParseTree.ExprFuncCall) expr).ident;
+
+            // 8 e
+            if(!funcEnv.isFunctionNameExist(name) && (env.Get(name) == null)){
+                throw new Exception("[Error at " + expr.info.lineno + ":" + expr.info.colno + "] Function "+name+"() is not defined.");
+            }
             // 8 g
             if (!(env.Get(name) instanceof ParseTreeInfo.FuncDeclInfo)) {
                 throw new Exception("[Error at " + expr.info.lineno + ":" + expr.info.colno + "] Identifier " + name + " should be function.");
