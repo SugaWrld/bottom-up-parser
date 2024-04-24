@@ -460,11 +460,7 @@ public class ParserImpl {
         Token mul = (Token) s2;
         ParseTree.Expr expr2 = (ParseTree.Expr) s3;
 
-        if(determineType(expr1).equals("null")){
-            expr1.info.type = determineTypeOfFunction(expr1);
-        }else if(determineType(expr2).equals("null")){
-            expr2.info.type = determineTypeOfFunction(expr2);
-        } else if(!areBothNum(expr1, expr2)){
+        if(!areBothNum(expr1, expr2)){
             throw new Exception("[Error at " + mul.lineno + ":" + mul.colno + "] Binary operation * cannot be used with " + determineType(expr1) + " and " +  determineType(expr2) + " values.");
         }    
         return new ParseTree.ExprMul(expr1, expr2);
@@ -686,17 +682,6 @@ public class ParserImpl {
         else return false;
     }
 
-    private String determineTypeOfFunction(ParseTree.Expr expr){
-        String name = ((ParseTree.ExprFuncCall) expr).ident;
-        System.out.println(funcEnv.isFunctionNameExist(name));
-        System.out.println("name: " + name);
-        int index = funcEnv.getIndexOfFunctionName(name);
-        System.out.println("index "+ index);
-        String type = funcEnv.getReturnTypeOfIndex(index);
-        System.out.println("env.getReturnTypeOfIndex(index): " + type);
-
-        return type;
-    }
     private boolean areBothNum(ParseTree.Expr expr1, ParseTree.Expr expr2) throws Exception {      
         // expr1 = num, expr2 = num
         if(expr1 instanceof ParseTree.ExprNumLit && expr2 instanceof ParseTree.ExprNumLit)
