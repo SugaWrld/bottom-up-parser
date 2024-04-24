@@ -1,3 +1,4 @@
+import java.lang.reflect.Array;
 import java.util.*;
 
 @SuppressWarnings({"unchecked", "UnnecessaryLocalVariable"})
@@ -9,6 +10,7 @@ public class ParserImpl {
     }
 
     Env env = new Env(null);
+    Env funcEnv = new Env();
     ParseTree.Program parsetree_program = null;
 
     private void nextEnv() {
@@ -71,6 +73,25 @@ public class ParserImpl {
         ParseTree.TypeSpec returnType = (ParseTree.TypeSpec) s4;
         ArrayList<ParseTree.Param> params = (ArrayList<ParseTree.Param>) s6;
         ArrayList<ParseTree.LocalDecl> localdecls = (ArrayList<ParseTree.LocalDecl>) s9;
+        
+        funcEnv.putFunctionName(functionName.lexeme);
+        funcEnv.putReturnType(returnType.typename);
+
+        // check if the identifier is already defined in params (8-i)
+        ArrayList<String> checkParams = new ArrayList<>();
+        if(params.size() > 0){
+            for(ParseTree.Param param: params){
+                if(checkParams.contains(param.ident)){
+                    throw new Exception("[Error at " + param.info.lineno + ":" + param.info.colno + "] Identifier " + param.ident + " is already defined.");
+                } else {
+                    checkParams.add(param.ident);
+                    // env.Put(param.ident, param.typespec.typename);
+                }
+            }
+        }
+        funcEnv.putFuncHashMap(functionName.lexeme, params);
+        params.forEach(param -> env.Put(param.ident, param.typespec.typename));
+
 
         ParseTree.FuncDecl funcdecl = new ParseTree.FuncDecl(functionName.lexeme, returnType, params, null, null);
         funcdecl.info.functionName = functionName;
@@ -79,7 +100,6 @@ public class ParserImpl {
 
         putGlobal(functionName.lexeme, funcdecl.info);
         nextEnv();
-        params.forEach(param -> env.Put(param.ident, param.typespec.typename));
 
         return null;
     }
@@ -97,9 +117,12 @@ public class ParserImpl {
 
         popEnv();
 
-        // check if atleast has one return statement
-        if(stmtlist.stream().noneMatch(stmt -> stmt.info.retType != null))
+        if(stmtlist.isEmpty())
             throw new Exception("[Error at " + id.lineno + ":" + id.colno + "] Function " + id.lexeme + "() should return at least one value.");
+        
+        // check if atleast has one return statement
+        // if(stmtlist.stream().noneMatch(stmt -> stmt.info.retType != null))
+        //     throw new Exception("[Error at " + id.lineno + ":" + id.colno + "] Function " + id.lexeme + "() should return at least one value.");
 
         // check if the return statements are compatible
         ParseTreeInfo.StmtStmtInfo retType = new ParseTreeInfo.StmtStmtInfo();
@@ -109,11 +132,17 @@ public class ParserImpl {
                 break;
             }
         }
-        if(!rettype.typename.equals(retType.retType)) {
+
+        if(retType.retType != null && !funcEnv.getReturnType().equals(retType.retType)) {
             throw new Exception(
-                "[Error at " + retType.lineno + ":" + retType.colno + "] Function " + id.lexeme + "() should return " + rettype.typename + " value, instead of " + retType.retType + " value."
+                "[Error at " + retType.lineno + ":" + retType.colno + "] Function " + id.lexeme + "() should return " + funcEnv.getReturnType() + " value, instead of " + retType.retType + " value."
             );
         }
+        // if(!rettype.typename.equals(retType.retType)) {
+        //     throw new Exception(
+        //         "[Error at " + retType.lineno + ":" + retType.colno + "] Function " + id.lexeme + "() should return " + rettype.typename + " value, instead of " + retType.retType + " value."
+        //     );
+        // }
 
         return funcdecl;
     }
@@ -143,7 +172,12 @@ public class ParserImpl {
     ParseTree.Param param____IDENT_TYPEOF_typespec(Object s1, Object s2, Object s3) throws Exception {
         Token id = (Token) s1;
         ParseTree.TypeSpec typespec = (ParseTree.TypeSpec) s3;
-        return new ParseTree.Param(id.lexeme, typespec);
+        ParseTree.Param param = new ParseTree.Param(id.lexeme, typespec);
+
+        param.info.lineno = id.lineno;
+        param.info.colno = id.colno;
+
+        return param;
     }
 
     ParseTree.TypeSpec typespec____primtype(Object s1) {
@@ -174,7 +208,18 @@ public class ParserImpl {
         ArrayList<ParseTree.LocalDecl> localdecls = (ArrayList<ParseTree.LocalDecl>) s1;
         ParseTree.LocalDecl localdecl = (ParseTree.LocalDecl) s2;
         localdecls.add(localdecl);
+        // System.out.println(funcEnv.getFunctionName());
+        // System.out.println(localdecl.ident);
+        // if (localdecls.size() > 0) {
+        //     for (ParseTree.LocalDecl local : localdecls) {
+        //        System.out.println(local.ident);
+        //     }
+        // }
+    
 
+
+
+        
         // put local declarations into the environment
         if(env.table.get(localdecl.ident) != null)
             throw new Exception("[Error at " + localdecl.info.lineno + ":" + localdecl.info.colno + "] Identifier " + localdecl.ident + " is already defined.");
@@ -258,6 +303,7 @@ public class ParserImpl {
         // check if ident's type matches with expr's type
         Object idType = env.Get(id.lexeme);
         Object exprType = determineType(expr);
+        
         if(!idType.equals(exprType))
             throw new Exception("[Error at " + id.lineno + ":" + id.colno + "] Variable " + id.lexeme + " should have " + idType + " value, instead of " + exprType + " value.");
 
@@ -309,6 +355,14 @@ public class ParserImpl {
 
         return returnStmt;
     }
+
+    // ParseTree.ReturnStmt returnstmt____RETURN_expr_SEMI_x10(Object s1, Object s2, Object s3) throws Exception {
+    //     ParseTree.Expr expr = (ParseTree.Expr) s2;
+    //     if(!determineType(expr).equals(env.getReturnType())){
+    //         throw new Exception("[Error at " + expr.info.lineno + ":" + expr.info.colno + "] Function "+env.getFunctionName()+"() should return "+ env.getReturnType() + " value, instead of " + determineType(expr) + " value.");
+    //     }
+    //     return new ParseTree.ReturnStmt(expr);
+    // }
 
     ParseTree.IfStmt ifstmt____IF_expr_THEN_stmtlist_ELSE_stmtlist_END(
         Object s1, Object s2, Object s3, Object s4, Object s5, Object s6, Object s7)
@@ -406,9 +460,13 @@ public class ParserImpl {
         Token mul = (Token) s2;
         ParseTree.Expr expr2 = (ParseTree.Expr) s3;
 
-        if(!areBothNum(expr1, expr2))
+        if(determineType(expr1).equals("null")){
+            expr1.info.type = determineTypeOfFunction(expr1);
+        }else if(determineType(expr2).equals("null")){
+            expr2.info.type = determineTypeOfFunction(expr2);
+        } else if(!areBothNum(expr1, expr2)){
             throw new Exception("[Error at " + mul.lineno + ":" + mul.colno + "] Binary operation * cannot be used with " + determineType(expr1) + " and " +  determineType(expr2) + " values.");
-
+        }    
         return new ParseTree.ExprMul(expr1, expr2);
     }
 
@@ -579,7 +637,13 @@ public class ParserImpl {
     ParseTree.ExprFuncCall expr____IDENT_LPAREN_args_RPAREN(Object s1, Object s2, Object s3, Object s4) throws Exception {
         Token id = (Token) s1;
         ArrayList<ParseTree.Arg> args = (ArrayList<ParseTree.Arg>) s3;
-        return new ParseTree.ExprFuncCall(id.lexeme, args);
+
+
+        ParseTree.ExprFuncCall exprFuncCall = new ParseTree.ExprFuncCall(id.lexeme, args);
+        exprFuncCall.info.lineno = id.lineno;
+        exprFuncCall.info.colno = id.colno;
+
+        return exprFuncCall;
     }
 
     ParseTree.ExprNewArray expr____NEW_primtype_LBRACKET_expr_RBRACKET(Object s1, Object s2, Object s3, Object s4, Object s5) throws Exception {
@@ -622,7 +686,18 @@ public class ParserImpl {
         else return false;
     }
 
-    private boolean areBothNum(ParseTree.Expr expr1, ParseTree.Expr expr2) throws Exception {
+    private String determineTypeOfFunction(ParseTree.Expr expr){
+        String name = ((ParseTree.ExprFuncCall) expr).ident;
+        System.out.println(funcEnv.isFunctionNameExist(name));
+        System.out.println("name: " + name);
+        int index = funcEnv.getIndexOfFunctionName(name);
+        System.out.println("index "+ index);
+        String type = funcEnv.getReturnTypeOfIndex(index);
+        System.out.println("env.getReturnTypeOfIndex(index): " + type);
+
+        return type;
+    }
+    private boolean areBothNum(ParseTree.Expr expr1, ParseTree.Expr expr2) throws Exception {      
         // expr1 = num, expr2 = num
         if(expr1 instanceof ParseTree.ExprNumLit && expr2 instanceof ParseTree.ExprNumLit)
             return true;
@@ -790,6 +865,12 @@ public class ParserImpl {
     }
 
     private String determineType(ParseTree.Expr expr) throws Exception {
+        // if expr is a function call, check if it has arguments (8 f)
+        if(ParseTree.ExprIdent.class.isInstance(expr) && funcEnv.isFunctionNameExist(((ParseTree.ExprIdent) expr).ident)){
+            throw new Exception("[Error at " + expr.info.lineno + ":" + expr.info.colno + "] Identifier "+((ParseTree.ExprIdent) expr).ident+" should be non-function type.");
+        }
+
+    
         List<Class<?>> numClasses = Arrays.asList(
             ParseTree.ExprNumLit.class, ParseTree.ExprAdd.class, ParseTree.ExprSub.class,
             ParseTree.ExprMul.class, ParseTree.ExprDiv.class, ParseTree.ExprMod.class
@@ -825,6 +906,56 @@ public class ParserImpl {
             String id = ((ParseTree.ExprIdent) expr).ident;
             return (String) env.Get(id);
         }
+
+        // checking 8 c-e , g
+        if (expr instanceof ParseTree.ExprFuncCall) {
+            String name = ((ParseTree.ExprFuncCall) expr).ident;
+            // 8 g
+            if (!(env.Get(name) instanceof ParseTreeInfo.FuncDeclInfo)) {
+                throw new Exception("[Error at " + expr.info.lineno + ":" + expr.info.colno + "] Identifier " + name + " should be function.");
+            }
+            
+            ArrayList<ParseTree.Arg> argTArrayList =  ((ParseTree.ExprFuncCall) expr).args;
+            int argSize;
+            if (argTArrayList != null) {
+                argSize = argTArrayList.size();
+            } else {
+                argSize = 0;
+            }
+            
+            ArrayList<ParseTree.Param> paramTypes =  funcEnv.getFuncHashMap(name);
+            int paramSize;
+            if (paramTypes != null) {
+                paramSize = paramTypes.size();
+            } else {
+                throw new Exception("[Error at " + expr.info.lineno + ":" + expr.info.colno + "] Function "+name+"() is not defined."); 
+            }
+            
+            // System.out.println("argSize: " + argSize);
+            // System.out.println("paramSize: " + paramSize);
+
+            if(argSize != paramSize){ // check if the number of arguments is correct
+                throw new Exception("[Error at " + expr.info.lineno + ":" + expr.info.colno + "] Function "+name+"() should be called with the correct number of arguments.");
+            } else{ // check if the type of arguments is correct
+                for(int i = 0; i < argSize; i++){
+                    if(!paramTypes.get(i).typespec.typename.equals(determineType(argTArrayList.get(i).expr))){
+                        if((i+1)==1){
+                            throw new Exception("[Error at " + argTArrayList.get(i).expr.info.lineno + ":" + argTArrayList.get(i).expr.info.colno + "] The 1st argument of function "+name+"() should be "+paramTypes.get(i).typespec.typename+" value, instead of "+determineType(argTArrayList.get(i).expr)+" value.");
+                        }else if((i+1)==2){
+                            throw new Exception("[Error at " + argTArrayList.get(i).expr.info.lineno + ":" + argTArrayList.get(i).expr.info.colno + "] The 2nd argument of function "+name+"() should be "+paramTypes.get(i).typespec.typename+" value, instead of "+determineType(argTArrayList.get(i).expr)+" value.");
+                        }else if((i+1)==3){
+                            throw new Exception("[Error at " + argTArrayList.get(i).expr.info.lineno + ":" + argTArrayList.get(i).expr.info.colno + "] The 3rd argument of function "+name+"() should be "+paramTypes.get(i).typespec.typename+" value, instead of "+determineType(argTArrayList.get(i).expr)+" value.");
+                        }else{
+                            throw new Exception("[Error at " + argTArrayList.get(i).expr.info.lineno + ":" + argTArrayList.get(i).expr.info.colno + "] The "+(i+1)+"th argument of function "+name+"() should be "+paramTypes.get(i).typespec.typename+" value, instead of "+determineType(argTArrayList.get(i).expr)+" value.");
+                        }
+                    }
+                }
+            }
+
+            int index = funcEnv.getIndexOfFunctionName(name);
+            return funcEnv.getReturnTypeOfIndex(index); 
+        }
+        
 
         return "null";
     }

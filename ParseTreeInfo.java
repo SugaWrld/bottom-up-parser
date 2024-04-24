@@ -45,6 +45,8 @@ public class ParseTreeInfo
     }
     public static class ParamInfo
     {
+        public int lineno;
+        public int colno;
     }
     public static class LocalDeclInfo
     {
@@ -59,6 +61,8 @@ public class ParseTreeInfo
     }
     public static class ArgInfo
     {
+        public int lineno;
+        public int colno;
     }
     public static class ExprInfo
     {

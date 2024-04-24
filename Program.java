@@ -22,7 +22,7 @@ public class Program {
           {
 //              "C:\\2019bFall-proj5-minc-SemanticChecker-startup\\sample\\minc\\"
 //              +"test_01_main_succ.minc",
-              "./tests/succ_10.minc"
+              "tests/fail_08c.minc"
           };
 
         if(args.length <= 0)
