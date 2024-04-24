@@ -97,6 +97,10 @@ public class ParserImpl {
 
         popEnv();
 
+        // check if atleast has one return statement
+        if(stmtlist.stream().noneMatch(stmt -> stmt.info.retType != null))
+            throw new Exception("[Error at " + id.lineno + ":" + id.colno + "] Function " + id.lexeme + "() should return at least one value.");
+
         // check if the return statements are compatible
         ParseTreeInfo.StmtStmtInfo retType = new ParseTreeInfo.StmtStmtInfo();
         for(ParseTree.Stmt stmt: stmtlist) {
