@@ -592,6 +592,9 @@ public class ParserImpl {
         Token id = (Token) s1;
         ParseTree.Expr expr = (ParseTree.Expr) s3;
 
+        if(!(env.Get(id.lexeme).equals("bool[]") || env.Get(id.lexeme).equals("num[]"))){
+            throw new Exception("[Error at " + id.lineno + ":" + id.colno + "] Identifier " + id.lexeme + " should be array variable.");
+        }
         if(!(determineType(expr).equals("num")))
             throw new Exception("[Error at " + expr.info.lineno + ":" + expr.info.colno + "] Array index must be num value.");
 
