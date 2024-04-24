@@ -858,7 +858,7 @@ public class ParserImpl {
     
         List<Class<?>> numClasses = Arrays.asList(
             ParseTree.ExprNumLit.class, ParseTree.ExprAdd.class, ParseTree.ExprSub.class,
-            ParseTree.ExprMul.class, ParseTree.ExprDiv.class, ParseTree.ExprMod.class
+            ParseTree.ExprMul.class, ParseTree.ExprDiv.class, ParseTree.ExprMod.class, ParseTree.ExprArraySize.class
         );
         boolean num = numClasses.stream().anyMatch(clazz -> clazz.isInstance(expr));
         if(num) return "num";
